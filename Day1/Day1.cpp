@@ -1,3 +1,4 @@
+// https://adventofcode.com/2024/day/1
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -19,7 +20,6 @@ int CountOccurences(std::vector<int>& list, int num)
 
 int main()
 {
-	// open file for reading
 	std::ifstream input_file("input.txt");
 	if (!input_file)
 	{
@@ -27,7 +27,6 @@ int main()
 		return 1;
 	}
 
-	// store the numbers in parallel arrays
 	int left_list_number, right_list_number;
 	std::vector<int> left_list, right_list;
 	while (input_file >> left_list_number >> right_list_number)
