@@ -67,6 +67,18 @@ int Count(const GridPoint& point)
 	return count;
 }
 
+/*
+* point passed in is the center of the X
+find two MAS in the shape of an X. One way to achieve that is like this:
+M.S
+.A.
+M.S
+*/
+int Count2(const GridPoint& point)
+{
+
+}
+
 int main()
 {
 	std::ifstream input_file("input.txt");
@@ -101,4 +113,17 @@ int main()
 	}
 
 	std::cout << xmas_count << std::endl;
+
+	for (int i = 0; i < rows; ++i)
+	{
+		for (int j = 0; j < columns; ++j)
+		{
+			GridPoint point(i, j);
+			if (point.GetLetter() == 'A')
+			{
+				xmas_count += Count2(point);
+			}
+		}
+	}
+
 }
