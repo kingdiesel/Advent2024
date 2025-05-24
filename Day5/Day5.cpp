@@ -64,6 +64,7 @@ bool FollowsRule(const std::vector<int>& pages, std::map<int, std::vector<int>>&
 void FixList(std::vector<int>& pages, std::map<int, std::vector<int>>& page_rules)
 {
 	std::pair<int, int> broken_rule;
+	// brute force, keep swapping rule breaks until we get success
 	while (!FollowsRule(pages, page_rules, broken_rule))
 	{
 		// locate index of broken_rule.first
