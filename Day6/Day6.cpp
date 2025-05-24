@@ -16,7 +16,11 @@ constexpr int columns = 130;
 #endif
 
 static char grid[rows][columns] = {};
-
+constexpr char EMPTY_CELL = '.';
+constexpr char OBSTRUCTION_CELL = '#';
+constexpr char GUARD_CELL = '^';
+constexpr int MAX_STEPS = rows * columns;
+bool IsBlocked(struct GridPoint& next_location);
 
 enum Directions
 {
@@ -61,7 +65,7 @@ GridPoint FindStartLocation()
 	{
 		for (int j = 0; j < columns; j++)
 		{
-			if (grid[i][j] == '^')
+			if (grid[i][j] == GUARD_CELL)
 			{
 				return GridPoint(i, j);
 			}
@@ -86,6 +90,56 @@ void TurnRight()
 	case Directions::LEFT:
 		current_direction = Directions::UP;
 		break;
+	}
+}
+
+void GetObstructionList(std::vector<GridPoint>& obstructions)
+{
+	GridPoint start_location = FindStartLocation();
+	for (int i = 0; i < rows; i++)
+	{
+		for (int j = 0; j < columns; j++)
+		{
+			// if an obstruction already exists
+			if (grid[i][j] == OBSTRUCTION_CELL || grid[i][j] == GUARD_CELL)
+			{
+				continue;
+			}
+
+			char cached_cell_value = grid[i][j];
+			grid[i][j] = OBSTRUCTION_CELL;
+			current_location = start_location;
+			GridPoint next_location;
+			current_direction = Directions::UP;
+			bool looped = false;
+			int num_steps_taken = 0;
+			while (next_location.IsValid())
+			{
+				if (!IsBlocked(next_location))
+				{
+					current_location = next_location;
+					if (next_location.IsValid())
+					{
+						num_steps_taken++;
+						if (num_steps_taken > MAX_STEPS)
+						{
+							looped = true; // looped around the grid
+							break;
+						}
+					}
+				}
+				else
+				{
+					TurnRight();
+				}
+			}
+
+			grid[i][j] = cached_cell_value; // restore the cell value
+			if (looped)
+			{
+				obstructions.push_back(GridPoint(i, j));
+			}
+		}
 	}
 }
 
@@ -172,5 +226,10 @@ int main()
 	}
 
 	std::cout << "Result: " << unique_locations.size() << std::endl;
+
+	std::vector<GridPoint> obstructions;
+	GetObstructionList(obstructions);
+
+	std::cout << "Result: " << obstructions.size() << std::endl;
 	return 0;
 }
