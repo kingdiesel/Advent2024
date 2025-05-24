@@ -74,9 +74,29 @@ M.S
 .A.
 M.S
 */
+
+bool IsOpposite(GridPoint point1, GridPoint point2)
+{
+	return point1.GetLetter() == 'M' && point2.GetLetter() == 'S' ||
+		point1.GetLetter() == 'S' && point2.GetLetter() == 'M';
+}
+
 int Count2(const GridPoint& point)
 {
+	GridPoint north_west{ point.row - 1, point.column - 1 };
+	GridPoint north_east{ point.row - 1, point.column + 1 };
+	GridPoint south_west{ point.row + 1, point.column - 1 };
+	GridPoint south_east{ point.row + 1, point.column + 1 };
 
+	// all four points must be valid to create the X
+	if (north_west.IsValid() && north_east.IsValid() && south_west.IsValid() && south_east.IsValid())
+	{
+		if (IsOpposite(north_west, south_east) && IsOpposite(north_east, south_west))
+		{
+			return 1;
+		}
+	}
+	return 0;
 }
 
 int main()
@@ -114,6 +134,7 @@ int main()
 
 	std::cout << xmas_count << std::endl;
 
+	xmas_count = 0;
 	for (int i = 0; i < rows; ++i)
 	{
 		for (int j = 0; j < columns; ++j)
@@ -126,4 +147,5 @@ int main()
 		}
 	}
 
+	std::cout << xmas_count << std::endl;
 }
