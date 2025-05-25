@@ -14,6 +14,7 @@ enum OperatorType
 	INVALID,
 	ADD,
 	MULTIPLY,
+	CONCAT
 };
 class EquationFragment
 {
@@ -95,7 +96,11 @@ public:
 		}
 		else if (m_operator_type == OperatorType::MULTIPLY)
 		{
-			m_operator_type = OperatorType::ADD;
+			m_operator_type = OperatorType::CONCAT;
+		}
+		else if (m_operator_type == OperatorType::CONCAT)
+		{
+			m_operator_type = OperatorType::ADD; // Reset to ADD for simplicity, could be any other logic as needed
 		}
 		else
 		{
@@ -175,6 +180,12 @@ public:
 				{
 					working_result *= m_fragments[i]->GetValue();
 				}
+				else if (cached_operator == OperatorType::CONCAT)
+				{
+					std::string current_result = std::to_string(working_result);
+					current_result += std::to_string(m_fragments[i]->GetValue());
+					working_result = std::stoull(current_result);
+				}
 				else
 				{
 					assert(false && "Invalid operator type");
@@ -188,6 +199,20 @@ public:
 		return working_result;
 	}
 
+	void GenerateCombinations(int depth, int length, std::vector<std::vector<int>>& combinations, std::vector<int> current_combination)
+	{
+		if (depth == 0)
+		{
+			combinations.push_back(current_combination);
+			return;
+		}
+		for (int i = 0; i < length; ++i)
+		{
+			current_combination[depth-1] = i;
+			GenerateCombinations(depth - 1, length, combinations, current_combination);
+		}
+	}
+
 	bool CouldDesiredMatchComputedResult()
 	{
 		if (GetComputedResult() == GetDesiredResult())
@@ -197,22 +222,52 @@ public:
 
 		std::vector<EquationFragment*> operators;
 		GetOperators(operators);
+		int num_operators = static_cast<int>(operators.size());
+
+		if (m_combinations_cache.find(num_operators) == m_combinations_cache.end())
+		{
+			std::vector<std::vector<int>> combinations;
+			std::vector<int> combination;
+			combination.resize(num_operators);
+			GenerateCombinations(num_operators, 3, combinations, combination);
+			m_combinations_cache[num_operators] = combinations;
+		}
 
 		for (int i = 0; i < operators.size(); ++i)
 		{
-			for (int j = 0; j < operators.size(); ++j)
+			// Try all combinations of operators
+			for (const auto& combination : m_combinations_cache[num_operators])
 			{
-				if (operators.size() > 1 && i == j)
+				// Swap the operator type based on the combination
+				for (int j = 0; j < combination.size(); ++j)
 				{
-					continue;
+					if (combination[j] == 0)
+					{
+						operators[j]->SetOperatorType(OperatorType::ADD);
+					}
+					else if (combination[j] == 1)
+					{
+						operators[j]->SetOperatorType(OperatorType::MULTIPLY);
+					}
+					else if (combination[j] == 2)
+					{
+						operators[j]->SetOperatorType(OperatorType::CONCAT);
+					}
 				}
-				operators[j]->SwapOperator();
+
 				if (GetComputedResult() == GetDesiredResult())
 				{
 					return true;
 				}
 			}
+
+			// Reset operator types to default for next iteration
+			for (auto& op : operators)
+			{
+				op->SetOperatorType(OperatorType::ADD);
+			}
 		}
+
 		return false;
 	}
 
@@ -250,6 +305,9 @@ public:
 private:
 	std::vector<class EquationFragment*> m_fragments;
 	std::uint64_t m_desired_result = 0;
+	// Cache for combinations of operators
+	// 1 operator will be a list
+	std::map<int, std::vector<std::vector<int>>> m_combinations_cache;
 };
 
 int main()
