@@ -86,12 +86,36 @@ void GetColinearGridPoints(const GridPoint& start, const GridPoint& end, std::ve
 
 	GridPoint start_to_end = end - start;
 	GridPoint colinear_one = end + start_to_end;
+	out_points.push_back(colinear_one);
 
 	GridPoint end_to_start = start - end;
 	GridPoint colinear_two = start + end_to_start;
-
-	out_points.push_back(colinear_one);
 	out_points.push_back(colinear_two);
+}
+
+void GetColinearGridPoints2(const GridPoint& start, const GridPoint& end, std::vector<GridPoint>& out_points)
+{
+	assert(start.IsValid() && end.IsValid());
+	assert(out_points.size() == 0);
+
+	GridPoint start_to_end = end - start;
+	GridPoint colinear_one = end;
+	while (colinear_one.IsValid())
+	{
+		colinear_one += start_to_end;
+		out_points.push_back(colinear_one);
+	}
+
+	GridPoint end_to_start = start - end;
+	GridPoint colinear_two = start;
+	while (colinear_two.IsValid())
+	{
+		colinear_two += end_to_start;
+		out_points.push_back(colinear_two);
+	}
+
+	out_points.push_back(start);
+	out_points.push_back(end);
 }
 
 int GetAntinodeCount()
@@ -167,7 +191,7 @@ int main()
 				GridPoint end = points[j];
 
 				std::vector<GridPoint> colinear_points;
-				GetColinearGridPoints(start, end, colinear_points);
+				GetColinearGridPoints2(start, end, colinear_points);
 
 				for (const GridPoint& point : colinear_points)
 				{
