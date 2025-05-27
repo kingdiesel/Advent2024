@@ -56,9 +56,46 @@ int64_t GetChecksum(std::vector<FileBlock>& file_blocks)
 	return checksum;
 }
 
+void RecomputeFreeSpaceMap(std::map<int, std::vector<int>>& free_space_to_index, std::vector<FileBlock>& file_blocks)
+{
+	free_space_to_index.clear();
+	for (int i = 0; i < file_blocks.size(); ++i)
+	{
+		if (!file_blocks[i].is_file)
+		{
+			int free_start = i;
+			for (int j = free_start; j < file_blocks.size(); ++j)
+			{
+				if (file_blocks[j].is_file)
+				{
+					int free_size = j - free_start;
+					if (free_space_to_index.find(free_size) == free_space_to_index.end())
+					{
+						free_space_to_index[free_size] = std::vector<int>();
+					}
+					free_space_to_index[free_size].push_back(free_start);
+					i = j - 1;
+					break;
+				}
+			}
+		}
+	}
+}
+
 void Compress2(std::vector<FileBlock>& file_blocks, std::map<int, std::vector<int>>& free_space_to_index, std::vector<FileDescriptor> descriptors)
 {
+	for (int i = descriptors.size(); i >= 0; --i)
+	{
+		if (free_space_to_index.find(descriptors[i].size) != free_space_to_index.end())
+		{
+			// move file
+			descriptors[i].starting_index = free_space_to_index[descriptors[i].size].front();
 
+			// update free space
+			// 
+			// update descriptors
+		}
+	}
 }
 
 int main()
