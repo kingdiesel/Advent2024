@@ -6,16 +6,17 @@
 #include <string>
 #include <cassert>
 
-#define SAMPLE_INPUT
+//#define SAMPLE_INPUT
 
 #ifdef SAMPLE_INPUT
-constexpr int rows = 4;
-constexpr int columns = 4;
+constexpr int rows = 8;
+constexpr int columns = 8;
 #else
 constexpr int rows = 54;
 constexpr int columns = 54;
 #endif
-
+constexpr int HEIGHT_MIN = 0;
+constexpr int HEIGHT_MAX = 9;
 static int grid[rows][columns] = {};
 struct GridPoint
 {
@@ -44,6 +45,39 @@ struct GridPoint
 	int row = 0;
 	int column = 0;
 };
+
+void GetTrailScore(const GridPoint& point, const int current_height, std::vector<GridPoint>& reached)
+{
+	if (current_height == HEIGHT_MAX)
+	{
+		if (std::find(reached.begin(), reached.end(), point) == reached.end())
+		{
+			reached.push_back(point);
+		}
+		return;
+	}
+
+	std::vector<GridPoint> next_points;
+	next_points.emplace_back(point.row - 1, point.column); // up
+	next_points.emplace_back(point.row + 1, point.column); // down
+	next_points.emplace_back(point.row, point.column - 1); // left
+	next_points.emplace_back(point.row, point.column + 1); // right
+
+	for (const GridPoint& next_point : next_points)
+	{
+		if (!next_point.IsValid())
+		{
+			continue;
+		}
+
+		const int next_height = next_point.GetValue();
+		if (next_height == current_height + 1)
+		{
+			GetTrailScore(next_point, current_height + 1, reached);
+		}
+	}
+}
+
 int main()
 {
 #ifdef SAMPLE_INPUT
@@ -59,13 +93,30 @@ int main()
 
 	std::string line;
 	int row = 0;
+	std::vector<GridPoint> starting_points;
 	while (std::getline(input_file, line))
 	{
 		for (int i = 0; i < line.length(); i++)
 		{
 			grid[row][i] = line[i] - '0';
+			if (grid[row][i] == HEIGHT_MIN)
+			{
+				starting_points.emplace_back(row, i);
+			}
 		}
 		row++;
 	}
+
+	int trail_scores = 0;
+	std::vector<GridPoint> reached_points;
+	for (const GridPoint& start_point : starting_points)
+	{
+		GetTrailScore(start_point, HEIGHT_MIN, reached_points);
+		trail_scores += static_cast<int>(reached_points.size());
+		reached_points.clear();
+	}
+
+	std::cout << "Result: " << trail_scores << std::endl;
+
     return 0;
 }
