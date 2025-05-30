@@ -78,6 +78,36 @@ void GetTrailScore(const GridPoint& point, const int current_height, std::vector
 	}
 }
 
+int GetTrailRating(const GridPoint& point, const int current_height)
+{
+	if (current_height == HEIGHT_MAX)
+	{
+		return 1;
+	}
+
+	std::vector<GridPoint> next_points;
+	next_points.emplace_back(point.row - 1, point.column); // up
+	next_points.emplace_back(point.row + 1, point.column); // down
+	next_points.emplace_back(point.row, point.column - 1); // left
+	next_points.emplace_back(point.row, point.column + 1); // right
+
+	int trail_rating = 0;
+	for (const GridPoint& next_point : next_points)
+	{
+		if (!next_point.IsValid())
+		{
+			continue;
+		}
+
+		const int next_height = next_point.GetValue();
+		if (next_height == current_height + 1)
+		{
+			trail_rating += GetTrailRating(next_point, current_height + 1);
+		}
+	}
+	return trail_rating;
+}
+
 int main()
 {
 #ifdef SAMPLE_INPUT
@@ -116,7 +146,16 @@ int main()
 		reached_points.clear();
 	}
 
-	std::cout << "Result: " << trail_scores << std::endl;
+	std::cout << "Trail Scores: " << trail_scores << std::endl;
+	
+	int trail_ratings = 0;
+	for (const GridPoint& start_point : starting_points)
+	{
+		const int trail_raiting = GetTrailRating(start_point, HEIGHT_MIN);
+		//std::cout << "Trail Rating for (" << start_point.row << ", " << start_point.column << "): " << trail_raiting << std::endl;
+		trail_ratings += trail_raiting;
+	}
+	std::cout << "Trail Ratings: " << trail_ratings << std::endl;
 
     return 0;
 }
