@@ -7,7 +7,7 @@
 #include <cassert>
 #include <map>
 #include <regex>
-#define SAMPLE_INPUT
+//#define SAMPLE_INPUT
 
 constexpr int a_button_cost = 3;
 constexpr int b_button_cost = 1;
@@ -22,37 +22,70 @@ struct Point
 
 struct ClawMachine
 {
-    Point button_a;
-    Point button_b;
+    Point A;
+    Point B;
     Point prize_location;
 };
 
-int64_t GetClawMachineCost(const ClawMachine& cm)
+//int64_t GetClawMachineCost(const ClawMachine& cm)
+//{
+//    int64_t cost = std::numeric_limits<int64_t>::max();
+//    bool found_combination = false;
+//    int64_t a_presses = 0;
+//    int64_t b_presses = 0;
+//
+//    for (a_presses = 0; a_presses <= 100; ++a_presses)
+//	{
+//		for (b_presses = 0; b_presses <= 100; ++b_presses)
+//		{
+//			// Calculate the final position after pressing buttons
+//            int64_t final_x = cm.A.x * a_presses + cm.B.x * b_presses;
+//            int64_t final_y = cm.A.y * a_presses + cm.B.y * b_presses;
+//
+//			// Check if this position matches the prize location
+//			if (final_x == cm.prize_location.x && final_y == cm.prize_location.y)
+//			{
+//				found_combination = true;
+//                int64_t current_cost = a_button_cost * a_presses + b_button_cost * b_presses;
+//				cost = std::min(cost, current_cost);
+//			}
+//		}
+//	}
+//
+//	return found_combination ? cost : -1;
+//}
+
+int64_t GetClawMachineCost(const ClawMachine& m)
 {
-    int64_t cost = std::numeric_limits<int64_t>::max();
-    bool found_combination = false;
-    int64_t a_presses = 0;
-    int64_t b_presses = 0;
+    // Compute the determinant
+    int64_t det = m.A.x * m.B.y - m.A.y * m.B.x;
+    if (det == 0)
+    {
+        return 0;
+    }
 
-    for (a_presses = 0; a_presses <= 100; ++a_presses)
-	{
-		for (b_presses = 0; b_presses <= 100; ++b_presses)
-		{
-			// Calculate the final position after pressing buttons
-            int64_t final_x = cm.button_a.x * a_presses + cm.button_b.x * b_presses;
-            int64_t final_y = cm.button_a.y * a_presses + cm.button_b.y * b_presses;
+    constexpr int64_t OFFSET = 10000000000000;
+    int64_t Tx = m.prize_location.x + OFFSET;
+    int64_t Ty = m.prize_location.y + OFFSET;
 
-			// Check if this position matches the prize location
-			if (final_x == cm.prize_location.x && final_y == cm.prize_location.y)
-			{
-				found_combination = true;
-                int64_t current_cost = a_button_cost * a_presses + b_button_cost * b_presses;
-				cost = std::min(cost, current_cost);
-			}
-		}
-	}
+    // Cramer's rule numerators
+    int64_t numA = Tx * m.B.y - Ty * m.B.x;
+    int64_t numB = m.A.x * Ty - m.A.y * Tx;
 
-	return found_combination ? cost : -1;
+    // Check exact divisibility
+    if (numA % det != 0 || numB % det != 0)
+    {
+        return 0;
+    }
+
+    int64_t a = numA / det;
+    int64_t b = numB / det;
+    if (a < 0 || b < 0)
+    {
+        return 0;
+    }
+
+    return a_button_cost * a + b_button_cost * b;
 }
 
 int main()
@@ -92,13 +125,13 @@ int main()
             int yval = std::stoi(match[3].str());
             if (which == 'A')
             {
-                cm.button_a.x = xval;
-                cm.button_a.y = yval;
+                cm.A.x = xval;
+                cm.A.y = yval;
             }
             else
             {
-                cm.button_b.x = xval;
-                cm.button_b.y = yval;
+                cm.B.x = xval;
+                cm.B.y = yval;
             }
         }
         else
@@ -120,13 +153,13 @@ int main()
             int yval = std::stoi(match[3].str());
             if (which == 'A')
             {
-                cm.button_a.x = xval;
-                cm.button_a.y = yval;
+                cm.A.x = xval;
+                cm.A.y = yval;
             }
             else
             {
-                cm.button_b.x = xval;
-                cm.button_b.y = yval;
+                cm.B.x = xval;
+                cm.B.y = yval;
             }
         }
         else
@@ -145,8 +178,8 @@ int main()
         {
             int xval = std::stoi(match[1].str());
             int yval = std::stoi(match[2].str());
-            cm.prize_location.x = xval + 10000000000000;
-            cm.prize_location.y = yval + 10000000000000;
+            cm.prize_location.x = xval;
+            cm.prize_location.y = yval;
         }
         else
         {
