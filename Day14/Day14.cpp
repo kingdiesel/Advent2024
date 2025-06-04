@@ -18,6 +18,9 @@ constexpr int max_x = 101;
 constexpr int y_middle = (max_y - 1) / 2;
 constexpr int x_middle = (max_x - 1) / 2;
 
+std::map<int, int> x_robot_map;
+constexpr int long_line_detected = 10;
+
 enum Quadrant
 {
     TOP_LEFT = 0,
@@ -30,7 +33,7 @@ enum Quadrant
 struct Point
 {
     Point() = default;
-    Point(int64_t x, int64_t y) 
+    Point(int x, int y)
 		: x(x), y(y) 
 	{ 
 	}
@@ -59,15 +62,15 @@ struct Point
         }
         return NONE;
     }
-    int64_t x = 0;
-    int64_t y = 0;
+    int x = 0;
+    int y = 0;
 };
 
 class Robot
 {
 public:
 	Robot() = default;
-    Robot(int64_t x, int64_t y, int64_t vx, int64_t vy)
+    Robot(int x, int y, int vx, int vy)
 		: m_location{x, y}, m_velocity{vx, vy} 
 	{
 	
@@ -80,8 +83,10 @@ public:
 
 	void Move()
 	{
+        x_robot_map[m_location.x]--;
 		m_location.x += m_velocity.x;
 		m_location.y += m_velocity.y;
+        
 
         // wrap around
         if (m_location.x < 0)
@@ -101,6 +106,7 @@ public:
 		{
 			m_location.y -= max_y;
 		}
+        x_robot_map[m_location.x]++;
 	}
 
 	const Point& GetLocation() const { return m_location; }
@@ -109,6 +115,31 @@ private:
     Point m_location;
     Point m_velocity;
 };
+
+void PrintRobotPositionGrid(const std::vector<Robot>& robots)
+{
+    for (int i = 0; i < max_y; ++i)
+	{
+		for (int j = 0; j < max_x; ++j)
+		{
+			bool found = false;
+			for (const Robot& robot : robots)
+			{
+				if (robot.GetLocation().x == j && robot.GetLocation().y == i)
+				{
+					std::cout << 'R';
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+			{
+				std::cout << '.';
+			}
+		}
+		std::cout << '\n';
+	}
+}
 
 int main()
 {
@@ -121,6 +152,11 @@ int main()
     {
         std::cerr << "Cannot open file.";
         return 1;
+    }
+
+    for (int i = 0; i < max_x; ++i)
+    {
+        x_robot_map[i] = 0;
     }
 
     // Regex to match lines like: "p=0,4 v=3,-3" (including negatives)
@@ -138,10 +174,11 @@ int main()
 
         if (std::regex_match(line, match, line_rx))
         {
-            int64_t p_x = std::stoi(match[1].str());
-            int64_t p_y = std::stoi(match[2].str());
-            int64_t v_x = std::stoi(match[3].str());
-            int64_t v_y = std::stoi(match[4].str());
+            int p_x = std::stoi(match[1].str());
+            int p_y = std::stoi(match[2].str());
+            int v_x = std::stoi(match[3].str());
+            int v_y = std::stoi(match[4].str());
+            x_robot_map[p_x]++;
             robots.emplace_back(Robot{p_x, p_y, v_x, v_y});
         }
         else
@@ -151,15 +188,66 @@ int main()
         }
     }
 
-    for (int i = 0; i < 100; ++i)
+    bool long_line = false;
+    for (int64_t i = 0; i < std::numeric_limits<int64_t>::max(); ++i)
     {
+        long_line = false;
+        int long_line_location_x = -1;
         for (Robot& robot : robots)
         {
             robot.Move();
         }
+
+        for (const auto& [x, count] : x_robot_map)
+		{
+			if (count > long_line_detected)
+			{
+				long_line = true;
+				long_line_location_x = x;
+                break;
+			}
+		}
+
+        if (long_line)
+        {
+            int count = 0;
+            int row[max_y + 1] = { 0 };
+            for (const Robot& robot : robots)
+            {
+                if (robot.GetLocation().x == long_line_location_x)
+                {
+                    row[robot.GetLocation().y] = 1;
+                }
+            }
+
+            int count_max = -1;
+            for (int i = 0; i < max_x; ++i)
+			{
+				if (row[i] == 1)
+				{
+                    count += 1;
+				}
+                else
+                {
+                    count = 0;
+                }
+                count_max = std::max(count_max, count);
+			}
+
+            if (count_max > long_line_detected)
+            {
+                std::cout << "Iterations: " << i + 1<< std::endl;
+                PrintRobotPositionGrid(robots);
+                char c;
+                while (std::cin.get(c))
+                {
+                    break;
+                }
+            }
+        }
     }
 
-    std::map<Quadrant, int64_t> quadrant_counts;
+ /*   std::map<Quadrant, int64_t> quadrant_counts;
     for (const Robot& robot : robots)
 	{
 		Quadrant q = robot.GetLocation().GetQuadrant();
@@ -176,7 +264,7 @@ int main()
         std::cout << "Quadrant " << quadrant << ": " << count << " robots\n";
 	}
 
-    std::cout << "Safety Factor: " << safety_factor << std::endl;
+    std::cout << "Safety Factor: " << safety_factor << std::endl;*/
 
     return 0;
 }
