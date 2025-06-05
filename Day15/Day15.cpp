@@ -7,15 +7,16 @@
 #include <cassert>
 #include <map>
 #include <regex>
-//#define SAMPLE_INPUT
+#define SAMPLE_INPUT
 #ifdef SAMPLE_INPUT
 constexpr int rows = 10;
-constexpr int columns = 10;
+constexpr int columns = 10 * 2;
 #else
 constexpr int rows = 50;
-constexpr int columns = 50;
+constexpr int columns = 50 * 2;
 #endif
 static char grid[rows][columns] = {};
+
 
 struct GridPoint
 {
@@ -168,17 +169,52 @@ int main()
 
 	std::string line;
 	int row = 0;
+	char old_grid[rows][columns/2] = {};
 	while (std::getline(input_file, line))
 	{
 		for (int i = 0; i < line.length(); i++)
 		{
-			grid[row][i] = line[i];
+			old_grid[row][i] = line[i];
 		}
 		row++;
 
 		if (row == rows)
 		{
 			break;
+		}
+	}
+
+	// update to new grid
+	/*
+		If the tile is #, the new map contains ## instead.
+		If the tile is O, the new map contains [] instead.
+		If the tile is ., the new map contains .. instead.
+		If the tile is @, the new map contains @. instead.
+	*/
+	for (int i = 0; i < rows; ++i)
+	{
+		for (int j = 0; j < columns; ++j)
+		{
+			if (old_grid[i][j] == '#')
+			{
+				grid[i][j * 2] = '#';
+				grid[i][(j * 2) + 1] = '#';
+			}
+			else if (old_grid[i][j] == 'O')
+			{
+				grid[i][j * 2] = '[';
+				grid[i][(j * 2) + 1] = ']';
+			}
+			else if (old_grid[i][j] == '.')
+			{
+				grid[i][j * 2] = '.';
+				grid[i][(j * 2) + 1] = '.';
+			}
+			else if (old_grid[i][j] == '@')
+			{
+				grid[i][j * 2] = '@';
+				grid[i][(j * 2) + 1] = '.';
+			}
 		}
 	}
 
@@ -208,21 +244,22 @@ int main()
 	}
 
 	std::vector<char> move_chars(move_string.begin(), move_string.end());
-	PerformMoves(move_chars);
+	PrintGrid();
+	//PerformMoves(move_chars);
 
-	int64_t total_cost = 0;
-	for (int i = 0; i < rows; ++i)
-	{
-		for (int j = 0; j < columns; ++j)
-		{
-			if (grid[i][j] == 'O')
-			{
-				int64_t cost = 100ll * i + j;
-				total_cost += cost;
-			}
-		}
-	}
+	//int64_t total_cost = 0;
+	//for (int i = 0; i < rows; ++i)
+	//{
+	//	for (int j = 0; j < columns; ++j)
+	//	{
+	//		if (grid[i][j] == 'O')
+	//		{
+	//			int64_t cost = 100ll * i + j;
+	//			total_cost += cost;
+	//		}
+	//	}
+	//}
 
-	std::cout << "Total Cost: " << total_cost << std::endl;
+	//std::cout << "Total Cost: " << total_cost << std::endl;
     return 0;
 }
