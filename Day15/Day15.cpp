@@ -7,7 +7,7 @@
 #include <cassert>
 #include <map>
 #include <regex>
-#define SAMPLE_INPUT
+//#define SAMPLE_INPUT
 #ifdef SAMPLE_INPUT
 constexpr int rows = 10;
 constexpr int columns = 10;
@@ -36,6 +36,12 @@ struct GridPoint
 		return grid[row][column];
 	}
 
+	void SetValue(char value)
+	{
+		assert(IsValid());
+		grid[row][column] = value;
+	}
+
 	bool operator==(const GridPoint& other) const
 	{
 		return row == other.row && column == other.column;
@@ -44,6 +50,7 @@ struct GridPoint
 	int row = 0;
 	int column = 0;
 };
+GridPoint robot_location;
 
 void PrintGrid()
 {
@@ -51,39 +58,50 @@ void PrintGrid()
 	{
 		for (int j = 0; j < columns; j++)
 		{
-			std::cout << grid[i][j];
+			if (robot_location.row == i && robot_location.column == j)
+			{
+				std::cout << '@';
+			}
+			else
+			{
+				std::cout << grid[i][j];
+			}
 		}
 		std::cout << std::endl;
 	}
 }
 
-GridPoint robot_location;
+
+void AdjustPointForMove(GridPoint& point, char move)
+{
+	if (move == '^')
+	{
+		point.row--;
+	}
+	else if (move == 'v')
+	{
+		point.row++;
+	}
+	else if (move == '<')
+	{
+		point.column--;
+	}
+	else if (move == '>')
+	{
+		point.column++;
+	}
+	else
+	{
+		assert(false);
+	}
+}
 
 void PerformMoves(std::vector<char> moves)
 {
 	for (char move : moves)
 	{
 		GridPoint next_location = robot_location;
-		if (move == '^')
-		{
-			next_location.row--;
-		}
-		else if (move == 'v')
-		{
-			next_location.row++;
-		}
-		else if (move == '<')
-		{
-			next_location.column--;
-		}
-		else if (move == '>')
-		{
-			next_location.column++;
-		}
-		else
-		{
-			assert(false);
-		}
+		AdjustPointForMove(next_location, move);
 
 		assert(next_location.IsValid());
 		if (next_location.GetValue() == '#')
@@ -94,6 +112,44 @@ void PerformMoves(std::vector<char> moves)
 		{
 			robot_location = next_location;
 		}
+		else if (next_location.GetValue() == 'O')
+		{
+			// get number of boxes in the move direction
+			GridPoint loop_var = next_location;
+			int line_length = 0;
+			while (loop_var.GetValue() == 'O')
+			{
+				AdjustPointForMove(loop_var, move);
+				line_length++;
+			}
+
+			if (loop_var.GetValue() == '#')
+			{
+				// line of boxes is blocked
+				continue;
+			}
+
+			assert(loop_var.GetValue() == '.');
+
+			// update the grid
+			loop_var.SetValue('O');
+			next_location.SetValue('.');
+
+			// update robot position
+			robot_location = next_location;
+		}
+		else
+		{
+			assert(false);
+		}
+
+		//std::cout << move << std::endl;
+		//PrintGrid();
+		//char c;
+		//while (std::cin.get(c))
+		//{
+		//	break;
+		//}
 	}
 }
 
@@ -145,6 +201,7 @@ int main()
 			{
 				robot_location.row = i;
 				robot_location.column = j;
+				robot_location.SetValue('.');
 				break;
 			}
 		}
@@ -152,5 +209,20 @@ int main()
 
 	std::vector<char> move_chars(move_string.begin(), move_string.end());
 	PerformMoves(move_chars);
+
+	int64_t total_cost = 0;
+	for (int i = 0; i < rows; ++i)
+	{
+		for (int j = 0; j < columns; ++j)
+		{
+			if (grid[i][j] == 'O')
+			{
+				int64_t cost = 100 * i + j;
+				total_cost += cost;
+			}
+		}
+	}
+
+	std::cout << "Total Cost: " << total_cost << std::endl;
     return 0;
 }
