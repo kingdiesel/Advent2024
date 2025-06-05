@@ -48,6 +48,11 @@ struct GridPoint
 		return row == other.row && column == other.column;
 	}
 
+	bool operator!=(const GridPoint& other) const
+	{
+		return !(*this == other);
+	}
+
 	int row = 0;
 	int column = 0;
 };
@@ -154,6 +159,79 @@ void PerformMoves(std::vector<char> moves)
 	}
 }
 
+void PerformMoves2(std::vector<char> moves)
+{
+	for (char move : moves)
+	{
+		GridPoint next_location = robot_location;
+		AdjustPointForMove(next_location, move);
+
+		assert(next_location.IsValid());
+		if (next_location.GetValue() == '#')
+		{
+			continue;
+		}
+		else if (next_location.GetValue() == '.')
+		{
+			robot_location = next_location;
+		}
+		else if (next_location.GetValue() == '[' || next_location.GetValue() == ']')
+		{
+			if (move == '>' || move == '<')
+			{
+				// get number of boxes in the move direction
+				GridPoint loop_var = next_location;
+				int line_length = 0;
+				while (loop_var.GetValue() == '[' || loop_var.GetValue() == ']')
+				{
+					AdjustPointForMove(loop_var, move);
+					line_length++;
+				}
+
+				if (loop_var.GetValue() == '#')
+				{
+					// line of boxes is blocked
+					continue;
+				}
+
+				assert(loop_var.GetValue() == '.');
+
+				// update the grid
+				loop_var.SetValue(next_location.GetValue() == '[' ? ']' : '[');
+				GridPoint loop_var2 = next_location;
+				while (loop_var2 != loop_var)
+				{
+					if (loop_var2.GetValue() == '[')
+					{
+						loop_var2.SetValue(']');
+					}
+					else if (loop_var2.GetValue() == ']')
+					{
+						loop_var2.SetValue('[');
+					}
+					AdjustPointForMove(loop_var2, move);
+				}
+				next_location.SetValue('.');
+
+				// update robot position
+				robot_location = next_location;
+			}
+		}
+		else
+		{
+			assert(false);
+		}
+
+		std::cout << move << std::endl;
+		PrintGrid();
+		char c;
+		while (std::cin.get(c))
+		{
+			break;
+		}
+	}
+}
+
 int main()
 {
 #ifdef SAMPLE_INPUT
@@ -244,8 +322,7 @@ int main()
 	}
 
 	std::vector<char> move_chars(move_string.begin(), move_string.end());
-	PrintGrid();
-	//PerformMoves(move_chars);
+	PerformMoves2(move_chars);
 
 	//int64_t total_cost = 0;
 	//for (int i = 0; i < rows; ++i)
