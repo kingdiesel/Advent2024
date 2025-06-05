@@ -217,7 +217,7 @@ int main()
 		{
 			if (grid[i][j] == 'O')
 			{
-				int64_t cost = 100 * i + j;
+				int64_t cost = 100ll * i + j;
 				total_cost += cost;
 			}
 		}
