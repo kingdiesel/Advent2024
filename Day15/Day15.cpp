@@ -7,7 +7,7 @@
 #include <cassert>
 #include <map>
 #include <regex>
-#define SAMPLE_INPUT
+//#define SAMPLE_INPUT
 #ifdef SAMPLE_INPUT
 constexpr int rows = 10;
 constexpr int columns = 10 * 2;
@@ -16,7 +16,7 @@ constexpr int rows = 50;
 constexpr int columns = 50 * 2;
 #endif
 static char grid[rows][columns] = {};
-
+static char grid_scratch[rows][columns] = {};
 
 struct GridPoint
 {
@@ -56,6 +56,133 @@ struct GridPoint
 	int row = 0;
 	int column = 0;
 };
+
+struct Box
+{
+	GridPoint left_side;
+	GridPoint right_side;
+
+	bool operator==(const Box& other) const
+	{
+		return left_side == other.left_side && right_side == other.right_side;
+	}
+
+	bool operator!=(const Box& other) const
+	{
+		return !(*this == other);
+	}
+
+	bool ScratchMove(char move)
+	{
+		GridPoint next_left = left_side;
+		GridPoint next_right = right_side;
+
+		if (move == '^')
+		{
+			next_left.row--;
+			next_right.row--;
+		}
+		else if (move == 'v')
+		{
+			next_left.row++;
+			next_right.row++;
+		}
+
+		if (!next_left.IsValid() || !next_right.IsValid())
+		{
+			return false; // out of bounds
+		}
+
+		if (grid_scratch[next_left.row][next_left.column] != '.' ||
+			grid_scratch[next_right.row][next_right.column] != '.')
+		{
+			return false; // blocked
+		}
+
+		grid_scratch[next_left.row][next_left.column] = '[';
+		grid_scratch[next_right.row][next_right.column] = ']';
+
+		grid_scratch[left_side.row][left_side.column] = '.';
+		grid_scratch[right_side.row][right_side.column] = '.';
+
+		return true;
+	}
+
+	void RealMove(char move)
+	{
+		GridPoint next_left = left_side;
+		GridPoint next_right = right_side;
+
+		if (move == '^')
+		{
+			next_left.row--;
+			next_right.row--;
+		}
+		else if (move == 'v')
+		{
+			next_left.row++;
+			next_right.row++;
+		}
+
+		grid[next_left.row][next_left.column] = '[';
+		grid[next_right.row][next_right.column] = ']';
+
+		grid[left_side.row][left_side.column] = '.';
+		grid[right_side.row][right_side.column] = '.';
+		left_side = next_left;
+		right_side = next_right;
+	}
+};
+
+void GetBoxesTouching(std::vector<Box>& boxes, const Box& current_box, char move)
+{
+	if (std::find(boxes.begin(), boxes.end(), current_box) != boxes.end())
+	{
+		return; // already processed this box
+	}
+
+	boxes.push_back(current_box);
+
+	int row_modifier = -1;
+	if (move == 'v')
+	{
+		row_modifier = 1;
+	}
+	GridPoint left_side_up(current_box.left_side.row + row_modifier, current_box.left_side.column);
+	GridPoint right_side_up(current_box.right_side.row + row_modifier, current_box.right_side.column);
+
+	if (left_side_up.GetValue() == ']')
+	{
+		Box new_box;
+		new_box.right_side = left_side_up;
+		new_box.left_side = GridPoint(left_side_up.row, left_side_up.column - 1);
+		GetBoxesTouching(boxes, new_box, move);
+	}
+	else if (left_side_up.GetValue() == '[')
+	{
+		Box new_box;
+		new_box.left_side = left_side_up;
+		new_box.right_side = GridPoint(left_side_up.row, left_side_up.column + 1);
+		GetBoxesTouching(boxes, new_box, move);
+	}
+
+	if (right_side_up.GetValue() == ']')
+	{
+		Box new_box;
+		new_box.left_side = GridPoint(right_side_up.row, right_side_up.column - 1); 
+		new_box.right_side = right_side_up;
+		GetBoxesTouching(boxes, new_box, move);
+	}
+	else if (right_side_up.GetValue() == '[')
+	{
+		Box new_box;
+		new_box.right_side = GridPoint(right_side_up.row, right_side_up.column + 1); 
+		new_box.left_side = right_side_up;
+		GetBoxesTouching(boxes, new_box, move);
+	}
+}
+
+
 GridPoint robot_location;
 
 void PrintGrid()
@@ -216,19 +343,72 @@ void PerformMoves2(std::vector<char> moves)
 				// update robot position
 				robot_location = next_location;
 			}
+			else if (move == '^' || move == 'v')
+			{
+				Box current_box;
+				if (next_location.GetValue() == '[')
+				{
+					current_box.left_side = next_location;
+					current_box.right_side = GridPoint(next_location.row, next_location.column + 1);
+				}
+				else
+				{
+					current_box.left_side = GridPoint(next_location.row, next_location.column - 1);
+					current_box.right_side = next_location;
+				}
+
+				std::vector<Box> boxes;
+				GetBoxesTouching(boxes, current_box, move);
+
+				// sort the boxes by row
+				if (move == '^')
+				{
+					std::sort(boxes.begin(), boxes.end(), [](const Box& a, const Box& b) {
+						return a.left_side.row < b.left_side.row;
+					});
+				}
+				else
+				{
+					std::sort(boxes.begin(), boxes.end(), [](const Box& a, const Box& b) {
+						return a.left_side.row > b.left_side.row;
+					});
+				}
+
+				// synchronize scratch grid
+				memcpy(grid_scratch, grid, sizeof(grid_scratch));
+
+				bool can_move_group = true;
+				for (Box& box : boxes)
+				{
+					if (!box.ScratchMove(move))
+					{
+						can_move_group = false;
+					}
+				}
+
+				if (can_move_group)
+				{
+					for (Box& box : boxes)
+					{
+						box.RealMove(move);
+					}
+					// update robot position
+					robot_location = next_location;
+				}
+			}
 		}
 		else
 		{
 			assert(false);
 		}
 
-		std::cout << move << std::endl;
-		PrintGrid();
-		char c;
-		while (std::cin.get(c))
-		{
-			break;
-		}
+		//std::cout << move << std::endl;
+		//PrintGrid();
+		//char c;
+		//while (std::cin.get(c))
+		//{
+		//	break;
+		//}
 	}
 }
 
@@ -296,6 +476,21 @@ int main()
 		}
 	}
 
+	for (int i = 0; i < rows; ++i)
+	{
+		for (int j = 0; j < columns; ++j)
+		{
+			if (grid[i][j] == '#')
+			{
+				grid_scratch[i][j] = '#';
+			}
+			else
+			{
+				grid_scratch[i][j] = '.';
+			}
+		}
+	}
+
 	std::string move_string;
 	std::getline(input_file, line);
 	while (std::getline(input_file, line))
@@ -323,7 +518,7 @@ int main()
 
 	std::vector<char> move_chars(move_string.begin(), move_string.end());
 	PerformMoves2(move_chars);
-
+	PrintGrid();
 	//int64_t total_cost = 0;
 	//for (int i = 0; i < rows; ++i)
 	//{
@@ -338,5 +533,18 @@ int main()
 	//}
 
 	//std::cout << "Total Cost: " << total_cost << std::endl;
+	int total_cost = 0;
+	for (int i = 0; i < rows; ++i)
+	{
+		for (int j = 0; j < columns; ++j)
+		{
+			if (grid[i][j] == '[')
+			{
+				total_cost += 100 * i + j;
+			}
+		}
+	}
+
+	std::cout << "Total Cost: " << total_cost << std::endl;
     return 0;
 }
