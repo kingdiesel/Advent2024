@@ -7,6 +7,7 @@
 #include <cassert>
 #include <map>
 #include <regex>
+#include <chrono>
 //#define SAMPLE_INPUT
 #ifdef SAMPLE_INPUT
 constexpr int rows = 17;
@@ -16,6 +17,7 @@ constexpr int rows = 141;
 constexpr int columns = 141;
 #endif
 static char grid[rows][columns] = {};
+static int best_scores[rows][columns] = { 0 };
 enum Directions
 {
 	NORTH = 0,
@@ -120,6 +122,12 @@ void FindExits(int& current_score, GridPoint current_point)
 		//PrintPath();
 		return;
 	}
+
+	if (best_scores[current_point.row][current_point.column] <= current_score)
+	{
+		return; // already found a better score for this point
+	}
+	best_scores[current_point.row][current_point.column] = current_score;
 	current_path.push_back(current_point);
 	GridPoint north(current_point.row - 1, current_point.column);
 	GridPoint south(current_point.row + 1, current_point.column);
@@ -131,6 +139,22 @@ void FindExits(int& current_score, GridPoint current_point)
 	visited[SOUTH] = std::find(current_path.begin(), current_path.end(), directions[SOUTH]) != current_path.end();
 	visited[EAST] = std::find(current_path.begin(), current_path.end(), directions[EAST]) != current_path.end();
 	visited[WEST] = std::find(current_path.begin(), current_path.end(), directions[WEST]) != current_path.end();
+
+	int num_walls = 0;
+	for (int i = NORTH; i <= WEST; ++i)
+	{
+		if (!visited[i] && directions[i].IsValid() && directions[i].GetValue() == '#')
+		{
+			num_walls++;
+		}
+	}
+
+	if (num_walls == 3)
+	{
+		current_point.SetValue('#');
+		current_path.pop_back();
+		return;
+	}
 
 	for (int i = NORTH; i <= WEST; ++i)
 	{
@@ -146,6 +170,21 @@ void FindExits(int& current_score, GridPoint current_point)
 			FindExits(current_score, directions[i]);
 			reindeer_direction = previous_direction;
 			current_score -= i == reindeer_direction ? 1 : 1001;
+			int num_walls = 0;
+			for (int j = NORTH; j <= WEST; ++j)
+			{
+				if (!visited[j] && directions[j].IsValid() && directions[j].GetValue() == '#')
+				{
+					num_walls++;
+				}
+			}
+
+			if (num_walls == 3)
+			{
+				current_point.SetValue('#');
+				current_path.pop_back();
+				return;
+			}
 		}
 	}
 
@@ -154,6 +193,7 @@ void FindExits(int& current_score, GridPoint current_point)
 
 int main()
 {
+	auto start = std::chrono::high_resolution_clock::now();
 #ifdef SAMPLE_INPUT
     std::ifstream input_file("sample_input.txt");
 #else
@@ -191,11 +231,22 @@ int main()
 		}
 	}
 
+	for (int i = 0; i < rows; ++i)
+	{
+		for (int j = 0; j < columns; ++j)
+		{
+			best_scores[i][j] = std::numeric_limits<int>::max();
+		}
+	}
+
 	int current_score = 0;
 	FindExits(current_score, reindeer_location);
 
 	std::sort(scores.begin(), scores.end());
 	std::cout << "Part 1: " << scores.front() << std::endl;
+	auto end = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+	std::cout << "Execution time: " << duration.count() << " milliseconds" << std::endl;
 
     return 0;
 }
