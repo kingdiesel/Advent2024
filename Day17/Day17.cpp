@@ -9,6 +9,7 @@
 #include <map>
 #include <regex>
 #include <chrono>
+#include <thread>
 #include "CPU.h"
 //#define SAMPLE_INPUT
 
@@ -96,6 +97,15 @@ int main()
     cpu.SetRegisterC(registerC);
     cpu.LoadProgram(program);
 
+    CPU packing_test;
+    packing_test.LoadProgram(program);
+    for (int i = 0; i < program.size(); ++i)
+    {
+        packing_test.PackValue(program[i]);
+    }
+
+    assert(packing_test.GetPackedValue() == packing_test.GetPackedProgram());
+
     auto HaltCallback = [&]() 
     {
         std::cout << std::endl;
@@ -104,8 +114,10 @@ int main()
         std::cout << "Execution time: " << duration.count() << " milliseconds" << std::endl;
         exit(0);
     };
-    cpu.SetHaltCallback(HaltCallback);
-    cpu.RunProgram();
-    assert(false);
+    //cpu.SetHaltCallback(HaltCallback);
+    cpu.RunProgram2();
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    std::cout << "Execution time: " << duration.count() << " milliseconds" << std::endl;
     return 0;
 }

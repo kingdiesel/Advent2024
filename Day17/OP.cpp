@@ -150,11 +150,8 @@ void OpCode_OUT::Execute(CPU& cpu)
 {
 	int operand = GetOperand(cpu);
 	int modulo_8 = operand % 8;
-	if (m_output_counter != 0)
-	{
-		std::cout << ",";
-	}
-	std::cout << modulo_8;
+	cpu.PackValue(modulo_8);
+	//std::cout << modulo_8;
 	m_output_counter++;
 }
 
