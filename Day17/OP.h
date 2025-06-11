@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 class OpCode
 {
 public:
@@ -6,7 +7,7 @@ public:
 	virtual void Execute(class CPU& cpu) = 0;
 	virtual bool IncrementsProgramCounter() const = 0;
 	virtual bool IsComboOperand() const = 0;
-	int GetOperand(class CPU& cpu) const;
+	int64_t GetOperand(class CPU& cpu) const;
 	virtual void ResetInternals(){};
 };
 

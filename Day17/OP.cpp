@@ -10,9 +10,9 @@
 	Combo operand 6 represents the value of register C.
 	Combo operand 7 is reserved and will not appear in valid programs.
 */
-int OpCode::GetOperand(class CPU& cpu) const
+int64_t OpCode::GetOperand(class CPU& cpu) const
 {
-	int operand = cpu.GetOperand();
+	int64_t operand = cpu.GetOperand();
 	if (IsComboOperand())
 	{
 		switch (operand)
@@ -41,9 +41,9 @@ int OpCode::GetOperand(class CPU& cpu) const
 
 void OpCode_ADV::Execute(CPU& cpu)
 {
-	int numerator = cpu.GetRegisterA();
-	int denominator = static_cast<int>(std::pow(2, GetOperand(cpu)));
-	int truncated_result = numerator / denominator;
+	int64_t numerator = cpu.GetRegisterA();
+	int64_t denominator = static_cast<int64_t>(std::pow(2, GetOperand(cpu)));
+	int64_t truncated_result = numerator / denominator;
 	cpu.SetRegisterA(truncated_result);
 }
 
@@ -59,9 +59,9 @@ bool OpCode_ADV::IsComboOperand() const
 
 void OpCode_BXL::Execute(CPU& cpu)
 {
-	int xor_left = cpu.GetRegisterB();
-	int xor_right = GetOperand(cpu);
-	int xor_result = xor_left ^ xor_right;
+	int64_t xor_left = cpu.GetRegisterB();
+	int64_t xor_right = GetOperand(cpu);
+	int64_t xor_result = xor_left ^ xor_right;
 	cpu.SetRegisterB(xor_result);
 }
 
@@ -77,8 +77,8 @@ bool OpCode_BXL::IsComboOperand() const
 
 void OpCode_BST::Execute(CPU& cpu)
 {
-	int operand = GetOperand(cpu);
-	int modulo_8 = operand % 8;
+	int64_t operand = GetOperand(cpu);
+	int64_t modulo_8 = operand % 8;
 	cpu.SetRegisterB(modulo_8);
 }
 
@@ -94,9 +94,9 @@ bool OpCode_BST::IsComboOperand() const
 
 void OpCode_BXC::Execute(CPU& cpu)
 {
-	int xor_left = cpu.GetRegisterB();
-	int xor_right = cpu.GetRegisterC();
-	int xor_result = xor_left ^ xor_right;
+	int64_t xor_left = cpu.GetRegisterB();
+	int64_t xor_right = cpu.GetRegisterC();
+	int64_t xor_result = xor_left ^ xor_right;
 	cpu.SetRegisterB(xor_result);
 }
 
@@ -112,9 +112,9 @@ bool OpCode_BXC::IsComboOperand() const
 
 void OpCode_BDV::Execute(CPU& cpu)
 {
-	int numerator = cpu.GetRegisterA();
-	int denominator = static_cast<int>(std::pow(2, GetOperand(cpu)));
-	int truncated_result = numerator / denominator;
+	int64_t numerator = cpu.GetRegisterA();
+	int64_t denominator = static_cast<int>(std::pow(2, GetOperand(cpu)));
+	int64_t truncated_result = numerator / denominator;
 	cpu.SetRegisterB(truncated_result);
 }
 
@@ -130,9 +130,9 @@ bool OpCode_BDV::IsComboOperand() const
 
 void OpCode_CDV::Execute(CPU& cpu)
 {
-	int numerator = cpu.GetRegisterA();
-	int denominator = static_cast<int>(std::pow(2, GetOperand(cpu)));
-	int truncated_result = numerator / denominator;
+	int64_t numerator = cpu.GetRegisterA();
+	int64_t denominator = static_cast<int>(std::pow(2, GetOperand(cpu)));
+	int64_t truncated_result = numerator / denominator;
 	cpu.SetRegisterC(truncated_result);
 }
 
@@ -148,8 +148,8 @@ bool OpCode_CDV::IsComboOperand() const
 
 void OpCode_OUT::Execute(CPU& cpu)
 {
-	int operand = GetOperand(cpu);
-	int modulo_8 = operand % 8;
+	int64_t operand = GetOperand(cpu);
+	int64_t modulo_8 = operand % 8;
 	cpu.PackValue(modulo_8);
 	//std::cout << modulo_8;
 	m_output_counter++;
@@ -170,7 +170,7 @@ void OpCode_JNZ::Execute(CPU& cpu)
 	m_performed_jump = false;
 	if (cpu.GetRegisterA() != 0)
 	{
-		int jump_location = GetOperand(cpu);
+		int64_t jump_location = GetOperand(cpu);
 		cpu.SetProgramCounter(jump_location);
 		m_performed_jump = true;
 	}
